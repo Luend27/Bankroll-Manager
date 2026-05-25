@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ banca.nome }} — Bet Manager{% endblock %}
+{% block nav_bankrolls %}active{% endblock %}
+
+{% block content %}
+<!-- Cabeçalho da banca -->
+<div class="d-flex flex-wrap align-items-start mb-4 gap-3">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm" title="Voltar ao dashboard">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div class="flex-grow-1">
+        <h2 class="fw-bold mb-0">{{ banca.nome }}</h2>
+        <small class="text-secondary">
+            Capital inicial: <strong>R$ {{ banca.capital_inicial|floatformat:2 }}</strong>
+            &nbsp;·&nbsp; Criada em {{ banca.criado_em|date:"d/m/Y" }}
+        </small>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'banca_editar' banca.pk %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-gear me-1"></i> Editar
+        </a>
+        <a href="{% url 'aposta_criar' banca.pk %}" class="btn btn-success btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Nova Aposta
+        </a>
+    </div>
+</div>
+
+<!-- Cards de estatísticas -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <p class="text-secondary mb-1" style="font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;">Saldo Atual</p>
+                <h4 class="fw-bold mb-0 {% if saldo_atual > banca.capital_inicial %}text-success{% elif saldo_atual < banca.capital_inicial %}text-danger{% endif %}">
+                    R$ {{ saldo_atual|floatformat:2 }}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <p class="text-secondary mb-1" style="font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;">Lucro Total</p>
+                <h4 class="fw-bold mb-0 {% if lucro_total > 0 %}text-success{% elif lucro_total < 0 %}text-danger{% endif %}">
+                    {% if lucro_total >= 0 %}+{% endif %}R$ {{ lucro_total|floatformat:2 }}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <p class="text-secondary mb-1" style="font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;">Win Rate</p>
+                <h4 class="fw-bold mb-0 {% if win_rate >= 55 %}text-success{% elif win_rate >= 40 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ win_rate }}%
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center py-3">
+                <p class="text-secondary mb-1" style="font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;">ROI</p>
+                <h4 class="fw-bold mb-0 {% if roi_medio > 0 %}text-success{% elif roi_medio < 0 %}text-danger{% endif %}">
+                    {% if roi_medio > 0 %}+{% endif %}{{ roi_medio }}%
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de apostas -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0 fw-semibold">
+            Apostas
+            <span class="badge bg-secondary bg-opacity-50 ms-1">{{ total_apostas }}</span>
+        </h5>
+        <a href="{% url 'aposta_criar' banca.pk %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Nova
+        </a>
+    </div>
+
+    <div class="card-body p-0">
+        {% if apostas %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="text-secondary" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <tr>
+                        <th class="ps-3">Data</th>
+                        <th>Esporte</th>
+                        <th>Competição / Mercado</th>
+                        <th class="text-end">Odd</th>
+                        <th class="text-end">Stake</th>
+                        <th class="text-center">Resultado</th>
+                        <th class="text-end">Lucro/Prej.</th>
+                        <th class="pe-3"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aposta in apostas %}
+                    <tr>
+                        <td class="ps-3 text-secondary small text-nowrap">
+                            {{ aposta.data|date:"d/m/Y" }}<br>
+                            <span style="font-size: 0.75rem;">{{ aposta.data|date:"H:i" }}</span>
+                        </td>
+                        <td>
+                            <small class="badge bg-secondary bg-opacity-25 text-light">
+                                {{ aposta.get_esporte_display }}
+                            </small>
+                        </td>
+                        <td>
+                            <span class="fw-semibold">{{ aposta.competicao|default:"—" }}</span>
+                            {% if aposta.mercado %}
+                            <br><small class="text-secondary">{{ aposta.mercado }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">{{ aposta.odd }}</td>
+                        <td class="text-end text-nowrap">R$ {{ aposta.stake|floatformat:2 }}</td>
+                        <td class="text-center">
+                            {% if aposta.resultado == 'GANHA' %}
+                            <span class="badge bg-success px-2">Ganha</span>
+                            {% elif aposta.resultado == 'PERDIDA' %}
+                            <span class="badge bg-danger px-2">Perdida</span>
+                            {% elif aposta.resultado == 'PENDENTE' %}
+                            <span class="badge bg-warning text-dark px-2">Pendente</span>
+                            {% elif aposta.resultado == 'DEVOLVIDA' %}
+                            <span class="badge bg-secondary px-2">Devolvida</span>
+                            {% elif aposta.resultado == 'CASHOUT' %}
+                            <span class="badge bg-info text-dark px-2">Cashout</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold text-nowrap
+                            {% if aposta.resultado != 'PENDENTE' and aposta.lucro_prejuizo > 0 %}text-success
+                            {% elif aposta.resultado != 'PENDENTE' and aposta.lucro_prejuizo < 0 %}text-danger
+                            {% else %}text-secondary{% endif %}">
+                            {% if aposta.resultado == 'PENDENTE' %}
+                                —
+                            {% else %}
+                                {% if aposta.lucro_prejuizo >= 0 %}+{% endif %}R$ {{ aposta.lucro_prejuizo|floatformat:2 }}
+                            {% endif %}
+                        </td>
+                        <td class="pe-3 text-end text-nowrap">
+                            <a href="{% url 'aposta_editar' aposta.pk %}" class="btn btn-outline-secondary btn-sm py-1 px-2" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'aposta_deletar' aposta.pk %}" class="btn btn-outline-danger btn-sm py-1 px-2 ms-1" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center text-secondary py-5">
+            <i class="bi bi-inbox" style="font-size: 2.5rem;"></i>
+            <p class="mt-3 mb-1">Nenhuma aposta registrada nesta banca.</p>
+            <a href="{% url 'aposta_criar' banca.pk %}" class="btn btn-outline-success btn-sm mt-2">
+                <i class="bi bi-plus-lg me-1"></i> Registrar primeira aposta
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

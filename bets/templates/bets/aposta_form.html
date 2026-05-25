@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} — Bet Manager{% endblock %}
+{% block nav_bankrolls %}active{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+
+        <div class="d-flex align-items-center mb-4 gap-3">
+            <a href="{% url 'banca_detalhe' banca.pk %}" class="btn btn-outline-secondary btn-sm" title="Voltar">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div>
+                <h2 class="fw-bold mb-0">{{ titulo }}</h2>
+                <small class="text-secondary">
+                    <i class="bi bi-bank me-1"></i> {{ banca.nome }}
+                </small>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow">
+            <div class="card-body p-4">
+                <form method="post" novalidate id="aposta-form">
+                    {% csrf_token %}
+
+                    <div class="row g-3">
+
+                        <!-- Esporte -->
+                        <div class="col-md-6">
+                            <label for="{{ form.esporte.id_for_label }}" class="form-label fw-semibold">Esporte</label>
+                            {{ form.esporte }}
+                            {% if form.esporte.errors %}
+                            <div class="text-danger small mt-1">{{ form.esporte.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Data -->
+                        <div class="col-md-6">
+                            <label for="{{ form.data.id_for_label }}" class="form-label fw-semibold">Data e hora</label>
+                            {{ form.data }}
+                            {% if form.data.errors %}
+                            <div class="text-danger small mt-1">{{ form.data.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Competição -->
+                        <div class="col-md-6">
+                            <label for="{{ form.competicao.id_for_label }}" class="form-label fw-semibold">
+                                Competição
+                                <small class="text-secondary fw-normal">(opcional)</small>
+                            </label>
+                            {{ form.competicao }}
+                            {% if form.competicao.errors %}
+                            <div class="text-danger small mt-1">{{ form.competicao.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Mercado -->
+                        <div class="col-md-6">
+                            <label for="{{ form.mercado.id_for_label }}" class="form-label fw-semibold">
+                                Mercado
+                                <small class="text-secondary fw-normal">(opcional)</small>
+                            </label>
+                            {{ form.mercado }}
+                            {% if form.mercado.errors %}
+                            <div class="text-danger small mt-1">{{ form.mercado.errors.0 }}</div>
+                            {% endif %}
+                            {% if form.mercado.help_text %}
+                            <small class="text-secondary">{{ form.mercado.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Odd -->
+                        <div class="col-md-4">
+                            <label for="{{ form.odd.id_for_label }}" class="form-label fw-semibold">Odd</label>
+                            {{ form.odd }}
+                            {% if form.odd.errors %}
+                            <div class="text-danger small mt-1">{{ form.odd.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Stake -->
+                        <div class="col-md-4">
+                            <label for="{{ form.stake.id_for_label }}" class="form-label fw-semibold">Stake (R$)</label>
+                            {{ form.stake }}
+                            {% if form.stake.errors %}
+                            <div class="text-danger small mt-1">{{ form.stake.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Resultado -->
+                        <div class="col-md-4">
+                            <label for="{{ form.resultado.id_for_label }}" class="form-label fw-semibold">Resultado</label>
+                            {{ form.resultado }}
+                            {% if form.resultado.errors %}
+                            <div class="text-danger small mt-1">{{ form.resultado.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Valor Cashout (condicional) -->
+                        <div class="col-md-4" id="cashout-field" style="display: none;">
+                            <label for="{{ form.valor_cashout.id_for_label }}" class="form-label fw-semibold">
+                                Valor do Cashout (R$)
+                            </label>
+                            {{ form.valor_cashout }}
+                            {% if form.valor_cashout.errors %}
+                            <div class="text-danger small mt-1">{{ form.valor_cashout.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Anotação -->
+                        <div class="col-12">
+                            <label for="{{ form.anotacao.id_for_label }}" class="form-label fw-semibold">
+                                Anotação
+                                <small class="text-secondary fw-normal">(opcional)</small>
+                            </label>
+                            {{ form.anotacao }}
+                            {% if form.anotacao.errors %}
+                            <div class="text-danger small mt-1">{{ form.anotacao.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3 py-2">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-success flex-fill fw-bold py-2">
+                            <i class="bi bi-check-lg me-1"></i> Salvar Aposta
+                        </button>
+                        <a href="{% url 'banca_detalhe' banca.pk %}" class="btn btn-outline-secondary flex-fill">
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const resultadoSelect = document.getElementById('id_resultado');
+    const cashoutField = document.getElementById('cashout-field');
+
+    function toggleCashoutField() {
+        const isCashout = resultadoSelect && resultadoSelect.value === 'CASHOUT';
+        if (cashoutField) {
+            cashoutField.style.display = isCashout ? 'block' : 'none';
+        }
+    }
+
+    if (resultadoSelect) {
+        resultadoSelect.addEventListener('change', toggleCashoutField);
+        toggleCashoutField();
+    }
+</script>
+{% endblock %}

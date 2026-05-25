@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+
 class Banca(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     nome = models.CharField(max_length=100, help_text="Ex: Bet365, Pinnacle, Banca Principal")
@@ -9,8 +10,14 @@ class Banca(models.Model):
     ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        verbose_name = "Banca"
+        verbose_name_plural = "Bancas"
+        ordering = ['nome']
+
     def __str__(self):
         return f"{self.nome} - {self.usuario.username}"
+
 
 class Aposta(models.Model):
     STATUS_CHOICES = [
@@ -31,19 +38,28 @@ class Aposta(models.Model):
     ]
 
     banca = models.ForeignKey(Banca, on_delete=models.CASCADE, related_name='apostas')
-    
+
     esporte = models.CharField(max_length=20, choices=ESPORTE_CHOICES, default='FUTEBOL')
     competicao = models.CharField(max_length=100, blank=True, null=True, verbose_name="Competição")
     mercado = models.CharField(max_length=100, blank=True, null=True, help_text="Ex: Over 2.5, ML")
-    
+
     data = models.DateTimeField(default=timezone.now)
-    
-    odd = models.DecimalField(max_digits=5, decimal_places=2)
+
+    odd = models.DecimalField(max_digits=6, decimal_places=2)
     stake = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Apostado")
-    
+
     resultado = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDENTE')
-    valor_cashout = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Valor do Cashout")
+    valor_cashout = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        null=True, blank=True,
+        verbose_name="Valor do Cashout"
+    )
     anotacao = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Aposta"
+        verbose_name_plural = "Apostas"
+        ordering = ['-data']
 
     def __str__(self):
         return f"{self.esporte} - {self.competicao} ({self.stake} @ {self.odd})"
@@ -63,3 +79,9 @@ class Aposta(models.Model):
                 return self.valor_cashout - self.stake
             return 0
         return 0
+
+    @property
+    def roi(self):
+        if not self.stake or self.stake == 0:
+            return 0
+        return round((self.lucro_prejuizo / self.stake) * 100, 2)
